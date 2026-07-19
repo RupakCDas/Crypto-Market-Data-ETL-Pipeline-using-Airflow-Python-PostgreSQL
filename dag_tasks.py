@@ -2,6 +2,10 @@
 CoinGecko ETL Pipeline - Airflow DAG
 Extracts crypto data from CoinGecko API and loads into PostgreSQL
 """
+import requests
+import logging
+import pandas as pd
+from bs4 import BeautifulSoup
 import json
 import ssl
 import urllib.parse
@@ -11,17 +15,8 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.hooks.postgres_hook import PostgresHook
-from airflow.models import Variable
-import requests
-import logging
-import pandas as pd
-from bs4 import BeautifulSoup
-from airflow.providers.postgres.operators.postgres import PostgresOperator
-from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
-from airflow.providers.postgres.operators.postgres import PostgresOperator
-from airflow.providers.postgres.hooks.postgres import PostgresHook
-
+from airflow.models import Variable
 
 logger = logging.getLogger("airflow.task")
 
@@ -43,27 +38,24 @@ def extract(**context):
             "X-CMC_PRO_API_KEY": "c1d79d5d81aa4890af1b30c61395ed51",
         },
     )
-    # FIX: Renamed 'context' to 'ssl_context' so it doesn't overwrite Airflow's context
+    
     ssl_context = ssl.create_default_context(cafile=certifi.where())
     
     with urllib.request.urlopen(request, context=ssl_context) as response:
         data = json.load(response)
 
-    # Push raw data to XCom using the safe 'ti' reference
+    
     ti.xcom_push(key="raw_data", value=data)
     
-    # Optional: Also return it so it maps to the default 'return_value' XCom key
     return data
 
 # ── Task 2: Transform ─────────────────────────────────────────────────────────
+
 def transform(**context):
     """Clean and reshape raw API data into DB-ready rows."""
     ti = context["ti"]
-
-    # Pull raw data from XCom
     raw_data = ti.xcom_pull(key="raw_data", task_ids="extract")
-
-    # Safety check: If extract task failed or returned nothing, stop early
+    
     if not raw_data:
         logger.error("No raw_data found in XCom from 'extract' task!")
         return 0
@@ -71,7 +63,6 @@ def transform(**context):
     transformed = []
     fetched_at = datetime.utcnow().isoformat()
 
-    # FIX: CoinMarketCap nests the list of coins inside the 'data' key
     coin_list = raw_data.get("data", [])
 
     for coin in coin_list:
@@ -85,7 +76,6 @@ def transform(**context):
 
     logger.info("Transformed %d records", len(transformed))
 
-    # Push the cleaned rows to XCom for your Load task
     ti.xcom_push(key="transformed_data", value=transformed)
 
     return len(transformed)
@@ -102,7 +92,6 @@ def load(**context):
 
     hook = PostgresHook(postgres_conn_id="api_connection")
 
-    # Cleaned SQL matching exactly what your Transform task produces
     upsert_sql = """
         INSERT INTO coins (
             coin_id, symbol, name
