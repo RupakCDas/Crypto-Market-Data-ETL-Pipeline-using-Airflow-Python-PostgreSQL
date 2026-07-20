@@ -1,7 +1,8 @@
 # Crypto Market Data ETL Pipeline using Airflow, Python-PostgreSQL.
 ## Data Architecture
 
-<img width="1055" height="401" alt="Untitled Diagram" src="https://github.com/user-attachments/assets/8b9f2c32-96f5-454b-93ae-f57e7252e9e5" />
+<img width="1055" height="401" alt="arc" src="https://github.com/user-attachments/assets/038ce189-ea1e-4b29-9392-ca640ab2dab8" />
+
 
 
 ### Project Overview
