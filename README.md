@@ -12,7 +12,7 @@ Designed and implemented a automated ETL data pipeline that orchestrates the dai
 ### Tech Stack & Key Concepts
 - Orchestration: Apache Airflow (DAGs, Operators, XComs)  
 - Database: PostgreSQL 
-- Languages & Libraries: Python, Requests, Logging  
+- Languages & Libraries: SQL, Python, Requests, Logging  
 
 ### ETL Tasks
 
